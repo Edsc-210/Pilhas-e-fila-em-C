@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 #define MAX 5
-#define MAX_PILHA 5
+#define MAX_PILHA 3
 
 typedef struct {
     char nome;
@@ -72,13 +73,7 @@ void inserir(Fila *f) {
     printf("Peça '%c' (ID: %d) inserida com sucesso!\n", nova.nome, nova.id);
 }
 
-
 void jogar(Fila *f, Peca *p) {
-    if (filaVazia(f)) {
-        printf("Fila vazia. Não é possível jogar, adicione uma peça.\n");
-        return;    
-    }
-
     *p = f->itens[f->inicio];             
     f->inicio = (f->inicio + 1) % MAX;     
     f->total--;                        
@@ -162,7 +157,9 @@ int main() {
     srand(time(NULL));
 
     Fila f;
+    Fila invertida;
     inicializarFila(&f);  // Inicializa a fila
+    inicializarFila(&invertida);
 
     Pilha p;
     inicializarPilha(&p);
@@ -183,7 +180,9 @@ int main() {
 
         printf("1. Jogar peca (Remover)\n");
         printf("2. Reservar peça\n");
-        printf("3. Usar peça reservada\n");
+        printf("3. Trocar peça atual\n");
+        printf("4. Troca multipla (trocar toda a reserva)\n");
+        printf("5. Usar peça reservada\n");
         printf("0. Sair\n");
         printf("Escolha: ");
         scanf("%d", &opcao);
@@ -198,21 +197,66 @@ int main() {
             case 2:
                 // Verifica se a pilha cabe mais
                 if (!pilhaCheia(&p)) {
-                // 1. Tira da fila 
+                //Tira da fila 
                 jogar(&f, &pecaRemovida); 
         
-                // 2. Coloca na pilha
+                // Coloca na pilha
                 push(&p, pecaRemovida); 
         
                 printf(">>> Voce reservou a peca: [%c %d] <<<\n", pecaRemovida.nome, pecaRemovida.id);
         
-                // 3. Importante: Repor a fila!
+                // Importante: Repor a fila!
                 inserir(&f); 
                 } else {
                     printf("Pilha cheia!\n");
                 }
             break;
-            case 3 :
+            case 3:
+                // Só dá pra trocar se tiver gente na fila E na pilha
+                 if (!filaVazia(&f) && !pilhaVazia(&p)) {
+        
+                    // Guarda a peça da fila numa variável auxiliar (Temp)
+                    Peca temp = f.itens[f.inicio];
+
+                    // Coloca a peça da pilha na frente da fila
+                    f.itens[f.inicio] = p.itens[p.topo];
+
+                    // Coloca a peça que estava na temp (antiga fila) no topo da pilha
+                    p.itens[p.topo] = temp;
+
+                    printf(">>> Troca realizada com sucesso! <<<\n");
+                } else {
+                    printf("Erro: Fila ou Pilha vazia, impossivel trocar.\n");
+                    }
+            break;
+            case 4:
+                // Verifica se tem peças suficientes (3 na fila e 3 na pilha)
+                // (Assumindo que MAX_PILHA é 3, ou verificando se p.topo == 2)
+                if (f.total >= 3 && p.topo >= 2) { 
+        
+                    // Vamos trocar as 3 primeiras posições
+                    for (int i = 0; i < 3; i++) {
+            
+                    // --- Lógica Matemática ---
+                    // Na Fila: Precisamos andar circularmente -> (inicio + i) % MAX
+                    // Na Pilha: Precisamos descer do topo -> (topo - i)
+            
+                    int indiceFila = (f.inicio + i) % MAX;
+                    int indicePilha = p.topo - i;
+
+                    // O Swap (A mesma lógica do case 3)
+                    Peca temp = f.itens[indiceFila];
+                    f.itens[indiceFila] = p.itens[indicePilha];
+                    p.itens[indicePilha] = temp;
+                }
+                printf(">>> Troca MULTIPLA realizada! <<<\n");
+
+                } else {
+                    printf("Erro: Precisa de pelo menos 3 pecas na fila e na pilha cheia.\n");
+            }
+             break;
+
+            case 5 :
                 if (!pilhaVazia(&p)) {
                     pop(&p, &pecaRemovida);
                     printf(">>> Você usou a peça reservada: [%c %d] <<<\n", pecaRemovida.nome, pecaRemovida.id);      
